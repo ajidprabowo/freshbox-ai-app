@@ -1,0 +1,6 @@
+{
+  "name": "FreshBox AI App",
+  "description": "Modular AI-powered cold box rental system for food loss reduction and energy optimization in storage and distribution.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
