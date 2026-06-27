@@ -43,7 +43,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg tracking-tight text-white leading-tight">
-              FreshBox <span className="text-emerald-400">AI</span>
+              SupplAI
             </h1>
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             <Box size={18} className="stroke-[2.5]" />
           </div>
           <h1 className="font-sans font-bold text-base tracking-tight text-white">
-            FreshBox <span className="text-emerald-400">AI</span>
+            SupplAI
           </h1>
         </div>
         <button
