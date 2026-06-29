@@ -40,9 +40,9 @@ export function getRuleBasedRecommendation(input: BoxRecommendationInput): BoxRe
 
   // Box specs
   const specs = {
-    'FreshBox S': { payload: 25, volume: 70, price: 75000 },
-    'FreshBox M': { payload: 60, volume: 165, price: 120000 },
-    'FreshBox L': { payload: 250, volume: 750, price: 200000 },
+    'FreshBox S': { payload: 25, volume: 70, price: 35000 },
+    'FreshBox M': { payload: 60, volume: 165, price: 60000 },
+    'FreshBox L': { payload: 250, volume: 750, price: 125000 },
   };
 
   // Decide box type
@@ -105,18 +105,19 @@ export function getRuleBasedRecommendation(input: BoxRecommendationInput): BoxRe
   // Alternative option
   let alternativeOption = '';
   if (recommendedBoxType === 'FreshBox S') {
-    alternativeOption = '1 FreshBox M can be used for extra thermal capacity and physical loading buffer.';
+    alternativeOption = '1 SupplAI Medium can be used for extra thermal capacity and physical loading buffer.';
   } else if (recommendedBoxType === 'FreshBox M') {
     const alternativeQtyL = Math.max(1, Math.ceil(totalWeightKg / specs['FreshBox L'].payload));
-    alternativeOption = `${alternativeQtyL} FreshBox L can consolidate your shipment, or FreshBox S units can be used for split last-mile deliveries.`;
+    alternativeOption = `${alternativeQtyL} SupplAI Large can consolidate your shipment, or SupplAI Small units can be used for split last-mile deliveries.`;
   } else {
     const alternativeQtyM = Math.ceil(totalWeightKg / specs['FreshBox M'].payload);
-    alternativeOption = `${alternativeQtyM} FreshBox M units can be used for easier manual handling, sorting, and multi-point distribution.`;
+    alternativeOption = `${alternativeQtyM} SupplAI Medium units can be used for easier manual handling, sorting, and multi-point distribution.`;
   }
 
   // Reasoning
   const typeChar = recommendedBoxType.split(' ')[1];
-  const reasoningSummary = `FreshBox ${typeChar} is selected because each unit supports up to ${finalSpec.payload} kg payload and ${finalSpec.volume} L volume. For ${totalWeightKg} kg of ${productName} (estimated ${Math.round(volume)} L), renting ${recommendedQuantity} FreshBox ${typeChar} unit(s) achieves ${utilizationRate} volumetric and physical capacity utilization, providing the most energy-efficient logistics configuration.`;
+  const modelNameLong = typeChar === 'S' ? 'SupplAI Small' : typeChar === 'M' ? 'SupplAI Medium' : 'SupplAI Large';
+  const reasoningSummary = `${modelNameLong} is selected because each unit supports up to ${finalSpec.payload} kg payload and ${finalSpec.volume} L volume. For ${totalWeightKg} kg of ${productName} (estimated ${Math.round(volume)} L), renting ${recommendedQuantity} ${modelNameLong} unit(s) achieves ${utilizationRate} volumetric and physical capacity utilization, providing the most energy-efficient logistics configuration.`;
 
   // Special warnings
   let specialWarning = '';

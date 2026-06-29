@@ -127,7 +127,7 @@ export default function CostBreakdown({ invoice, onPrintInvoice }: CostBreakdown
               <span>TOTAL AMT</span>
             </div>
             <div className="flex justify-between text-slate-300">
-              <span>FreshBox Unit Rental ({invoice.durationDays} days)</span>
+              <span>SupplAI Unit Rental ({invoice.durationDays} days)</span>
               <span>Rp{breakdown.boxRentalCost.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-slate-300">

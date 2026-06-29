@@ -1,5 +1,6 @@
 import { FreshBox, Rental, ProductBatch, BoxRecommendationResult, RentalSuggestion } from './types';
 import { INITIAL_BOXES, INITIAL_RENTALS, INITIAL_PRODUCTS } from './mockData';
+import { getPricePerDay } from './pricing';
 
 const IS_BROWSER = typeof window !== 'undefined';
 
@@ -11,7 +12,20 @@ export function getBoxes(): FreshBox[] {
     return INITIAL_BOXES;
   }
   try {
-    return JSON.parse(stored);
+    const boxes: FreshBox[] = JSON.parse(stored);
+    let modified = false;
+    const migratedBoxes = boxes.map(box => {
+      const correctPrice = getPricePerDay(box.type);
+      if (box.pricePerDay !== correctPrice) {
+        modified = true;
+        return { ...box, pricePerDay: correctPrice };
+      }
+      return box;
+    });
+    if (modified) {
+      localStorage.setItem('freshbox_units', JSON.stringify(migratedBoxes));
+    }
+    return migratedBoxes;
   } catch (e) {
     return INITIAL_BOXES;
   }

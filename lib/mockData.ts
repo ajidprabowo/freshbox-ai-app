@@ -11,7 +11,7 @@ export const INITIAL_BOXES: FreshBox[] = [
     currentHumidity: 65,
     tempRange: '-2°C to 15°C',
     lastSanitized: '2026-06-23',
-    pricePerDay: 75000,
+    pricePerDay: 35000,
   },
   {
     id: 'FB-102',
@@ -23,7 +23,7 @@ export const INITIAL_BOXES: FreshBox[] = [
     currentHumidity: 88,
     tempRange: '-10°C to 20°C',
     lastSanitized: '2026-06-22',
-    pricePerDay: 120000,
+    pricePerDay: 60000,
     assignedProductId: 'Fresh Tomatoes Batch A',
   },
   {
@@ -36,7 +36,7 @@ export const INITIAL_BOXES: FreshBox[] = [
     currentHumidity: 60,
     tempRange: '-25°C to 25°C',
     lastSanitized: '2026-06-24',
-    pricePerDay: 200000,
+    pricePerDay: 125000,
   },
   {
     id: 'FB-104',
@@ -48,7 +48,7 @@ export const INITIAL_BOXES: FreshBox[] = [
     currentHumidity: 92,
     tempRange: '-2°C to 15°C',
     lastSanitized: '2026-06-21',
-    pricePerDay: 75000,
+    pricePerDay: 35000,
     assignedProductId: 'Organic Spinach Batch B',
   },
   {
@@ -61,7 +61,7 @@ export const INITIAL_BOXES: FreshBox[] = [
     currentHumidity: 55,
     tempRange: '-10°C to 20°C',
     lastSanitized: '2026-06-15',
-    pricePerDay: 120000,
+    pricePerDay: 60000,
   },
   {
     id: 'FB-106',
@@ -73,7 +73,7 @@ export const INITIAL_BOXES: FreshBox[] = [
     currentHumidity: 70,
     tempRange: '-25°C to 25°C',
     lastSanitized: '2026-06-23',
-    pricePerDay: 200000,
+    pricePerDay: 125000,
   },
   {
     id: 'FB-107',
@@ -85,7 +85,7 @@ export const INITIAL_BOXES: FreshBox[] = [
     currentHumidity: 62,
     tempRange: '-10°C to 20°C',
     lastSanitized: '2026-06-24',
-    pricePerDay: 120000,
+    pricePerDay: 60000,
   },
   {
     id: 'FB-108',
@@ -97,7 +97,7 @@ export const INITIAL_BOXES: FreshBox[] = [
     currentHumidity: 64,
     tempRange: '-2°C to 15°C',
     lastSanitized: '2026-06-22',
-    pricePerDay: 75000,
+    pricePerDay: 35000,
   },
 ];
 

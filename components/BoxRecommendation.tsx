@@ -24,6 +24,14 @@ import {
 } from 'lucide-react';
 import { BoxRecommendationInput, BoxRecommendationResult, UsageMode, RentalSuggestion, BoxType } from '../lib/types';
 import { saveLatestRentalSuggestion } from '../lib/storage';
+import { getPricePerDay, formatRupiah } from '../lib/pricing';
+
+const getDisplayBoxName = (typeStr: string) => {
+  if (typeStr.endsWith('S')) return 'SupplAI Small';
+  if (typeStr.endsWith('M')) return 'SupplAI Medium';
+  if (typeStr.endsWith('L')) return 'SupplAI Large';
+  return typeStr;
+};
 
 interface BoxRecommendationProps {
   onUseRecommendation: (rec: RentalSuggestion) => void;
@@ -63,10 +71,8 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
     const typeStr = result.recommendedBoxType; // e.g. "FreshBox M"
     const typeLetter: BoxType = typeStr.endsWith('S') ? 'S' : typeStr.endsWith('M') ? 'M' : 'L';
 
-    // Daily prices: S = 75k, M = 120k, L = 200k
-    let dailyPrice = 75000;
-    if (typeLetter === 'M') dailyPrice = 120000;
-    if (typeLetter === 'L') dailyPrice = 200000;
+    // Daily prices: S = 35k, M = 60k, L = 125k
+    const dailyPrice = getPricePerDay(typeLetter);
 
     const boxRentalCost = dailyPrice * qty * duration;
 
@@ -247,9 +253,9 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
           <div className="flex justify-between items-start">
             <div>
               <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600 font-mono uppercase tracking-wide">MODEL S</span>
-              <h3 className="text-base font-bold text-slate-800 mt-1">FreshBox Small</h3>
+              <h3 className="text-base font-bold text-slate-800 mt-1">SupplAI Small</h3>
             </div>
-            <span className="font-mono text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Rp75,000/day</span>
+            <span className="font-mono text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Rp35,000/day</span>
           </div>
           <div className="space-y-2 text-xs text-slate-500">
             <div className="flex justify-between">
@@ -262,7 +268,7 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
             </div>
             <div className="flex justify-between">
               <span>Best Suited For:</span>
-              <span className="font-semibold text-slate-700">High-value boutique batches</span>
+              <span className="font-semibold text-slate-700">Small premium batches</span>
             </div>
           </div>
         </div>
@@ -273,9 +279,9 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
           <div className="flex justify-between items-start">
             <div>
               <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600 font-mono uppercase tracking-wide">MODEL M</span>
-              <h3 className="text-base font-bold text-slate-800 mt-1">FreshBox Medium</h3>
+              <h3 className="text-base font-bold text-slate-800 mt-1">SupplAI Medium</h3>
             </div>
-            <span className="font-mono text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Rp120,000/day</span>
+            <span className="font-mono text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Rp60,000/day</span>
           </div>
           <div className="space-y-2 text-xs text-slate-500">
             <div className="flex justify-between">
@@ -299,9 +305,9 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
           <div className="flex justify-between items-start">
             <div>
               <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600 font-mono uppercase tracking-wide">MODEL L</span>
-              <h3 className="text-base font-bold text-slate-800 mt-1">FreshBox Large</h3>
+              <h3 className="text-base font-bold text-slate-800 mt-1">SupplAI Large</h3>
             </div>
-            <span className="font-mono text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Rp200,000/day</span>
+            <span className="font-mono text-xs font-extrabold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Rp125,000/day</span>
           </div>
           <div className="space-y-2 text-xs text-slate-500">
             <div className="flex justify-between">
@@ -541,7 +547,7 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
                 <Sparkles className="text-emerald-500 fill-emerald-500/10 animate-pulse" size={18} />
               </div>
               <div>
-                <p className="font-semibold text-slate-700">Consulting FreshBox Neural Model</p>
+                <p className="font-semibold text-slate-700">Consulting SupplAI Neural Model</p>
                 <p className="text-xs max-w-xs leading-relaxed mt-1">
                   Determining thermal bounds, calculating box capacities, and generating complete pricing breakdowns...
                 </p>
@@ -591,7 +597,7 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
                       <span className="bg-slate-900 text-white px-2.5 py-1 rounded-xl text-xs font-mono">
                         {rentalSuggestion.recommendedQuantity} ×
                       </span>
-                      <span>{rentalSuggestion.recommendedBoxType}</span>
+                      <span>{getDisplayBoxName(rentalSuggestion.recommendedBoxType)}</span>
                     </p>
                   </div>
 
@@ -775,7 +781,7 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
                         <span>TOTAL AMT</span>
                       </div>
                       <div className="flex justify-between text-slate-300">
-                        <span>FreshBox {rentalSuggestion.recommendedBoxType.split(' ')[1]} Container Leases ({rentalSuggestion.recommendedQuantity} units)</span>
+                        <span>{getDisplayBoxName(rentalSuggestion.recommendedBoxType)} Leases ({rentalSuggestion.recommendedQuantity} units)</span>
                         <span>Rp{rentalSuggestion.costBreakdown.boxRentalCost.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-slate-300">

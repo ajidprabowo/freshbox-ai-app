@@ -1,5 +1,6 @@
 import React from 'react';
 import { FreshBox } from '@/lib/types';
+import { SUPPLAI_PRICING, formatRupiah } from '../lib/pricing';
 import {
   Battery,
   Thermometer,
@@ -56,19 +57,7 @@ export default function BoxCard({ box, onBookClick, onViewRentalClick }: BoxCard
     }
   };
 
-  // Box size translation
-  const getSizeLabel = (type: FreshBox['type']) => {
-    switch (type) {
-      case 'S':
-        return { label: 'Small (S)', cap: 'Up to 200 kg' };
-      case 'M':
-        return { label: 'Medium (M)', cap: 'Up to 500 kg' };
-      case 'L':
-        return { label: 'Large (L)', cap: 'Up to 1200 kg' };
-    }
-  };
-
-  const sizeInfo = getSizeLabel(box.type);
+  const pricingInfo = SUPPLAI_PRICING[box.type];
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full">
@@ -77,8 +66,8 @@ export default function BoxCard({ box, onBookClick, onViewRentalClick }: BoxCard
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-slate-800 text-lg">{box.id}</span>
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700 font-mono">
-              {sizeInfo.label}
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 text-slate-700 font-mono uppercase">
+              MODEL {box.type}
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500">
@@ -100,6 +89,16 @@ export default function BoxCard({ box, onBookClick, onViewRentalClick }: BoxCard
 
       {/* Card Body */}
       <div className="p-5 flex-1 space-y-4">
+        {/* Model info labels */}
+        <div>
+          <h4 className="text-base font-extrabold text-slate-900 tracking-tight font-sans">
+            {pricingInfo.label}
+          </h4>
+          <p className="text-[11px] text-slate-500 italic mt-0.5">
+            Best Suited For: {pricingInfo.bestSuitedFor}
+          </p>
+        </div>
+
         {/* Real-time Environment Gauges */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-slate-50/60 rounded-xl p-3 border border-slate-100/50 flex items-center gap-2.5">
@@ -124,8 +123,16 @@ export default function BoxCard({ box, onBookClick, onViewRentalClick }: BoxCard
         </div>
 
         {/* Specifications List */}
-        <div className="space-y-2.5 text-xs text-slate-600">
+        <div className="space-y-2 text-xs text-slate-600 border-t border-slate-100 pt-3">
           <div className="flex items-center justify-between">
+            <span className="text-slate-400">Usable Volume:</span>
+            <span className="font-semibold text-slate-800">{pricingInfo.usableVolumeLiters} Liters</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">Payload Cap:</span>
+            <span className="font-semibold text-slate-800">{pricingInfo.payloadKg} Kg</span>
+          </div>
+          <div className="flex items-center justify-between border-t border-slate-50 pt-2">
             <span className="text-slate-400">Temp Range Capability:</span>
             <span className="font-mono font-semibold text-slate-800">{box.tempRange}</span>
           </div>
@@ -168,7 +175,7 @@ export default function BoxCard({ box, onBookClick, onViewRentalClick }: BoxCard
             RENTAL RATE
           </p>
           <p className="text-base font-extrabold text-slate-900 mt-1">
-            Rp{box.pricePerDay.toLocaleString()}<span className="text-xs text-slate-500 font-normal">/day</span>
+            {formatRupiah(box.pricePerDay)}<span className="text-xs text-slate-500 font-normal">/day</span>
           </p>
         </div>
 

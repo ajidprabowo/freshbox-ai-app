@@ -31,8 +31,8 @@ export async function POST(req: NextRequest) {
 
     const modelName = process.env.GEMINI_MODEL || "gemini-3.5-flash";
 
-    const prompt = `You are an expert cold chain logistics assistant for "FreshBox AI".
-Recommend the best FreshBox configuration (FreshBox S, FreshBox M, or FreshBox L) based on the following client request details:
+    const prompt = `You are an expert cold chain logistics assistant for "SupplAI".
+Recommend the best configuration (represented as 'FreshBox S', 'FreshBox M', or 'FreshBox L') based on the following client request details:
 
 Product Category: ${input.productCategory}
 Product Name: ${input.productName}
@@ -48,16 +48,16 @@ Battery Backup Needed: ${input.needBatteryBackup ? "Yes" : "No"}
 GPS Tracking Needed: ${input.needGpsTracking ? "Yes" : "No"}
 
 Box Specs Reference:
-- FreshBox S: payload cap = 25 kg, volume cap = 70 L, rental rate = Rp75,000/day. Best for small batch, sample products, or last-mile.
-- FreshBox M: payload cap = 60 kg, volume cap = 165 L, rental rate = Rp120,000/day. Best for standard storage and distribution.
-- FreshBox L: payload cap = 250 kg, volume cap = 750 L, rental rate = Rp200,000/day. Best for warehouse and large batch.
+- FreshBox S (SupplAI Small): payload cap = 25 kg, volume cap = 70 L, rental rate = Rp35,000/day. Best for small batch, sample products, or last-mile.
+- FreshBox M (SupplAI Medium): payload cap = 60 kg, volume cap = 165 L, rental rate = Rp60,000/day. Best for standard storage and distribution.
+- FreshBox L (SupplAI Large): payload cap = 250 kg, volume cap = 750 L, rental rate = Rp125,000/day. Best for warehouse and large batch.
 
 Requirements:
 1. Select the most efficient and cost-effective box size (S, M, or L) and calculate the necessary quantity to hold the total payload weight and volume safely.
 2. Determine capacity utilization percentage (utilizationRate) which is the higher percentage of weight vs. payload capacity, or volume vs. volume capacity.
 3. Compute total estimated rental cost based on rental price per day, quantity, and duration (Rp[total] for [X] days).
 4. Outline the recommended microclimate settings (temperature, relative humidity) based on cold chain science.
-5. Detail a custom reasoning summary and provide alternate options (e.g. if they could use fewer of a larger box, or split into smaller boxes for distribution modularity).
+5. Detail a custom reasoning summary using SupplAI Small/Medium/Large naming and provide alternate options (e.g. if they could use fewer of a larger box, or split into smaller boxes for distribution modularity).
 6. Return a warning (specialWarning) if the product is highly perishable (like seafood/meat) or sensitive to chilling injuries (like tomatoes/tropical fruit under 10°C).`;
 
     const response = await ai.models.generateContent({

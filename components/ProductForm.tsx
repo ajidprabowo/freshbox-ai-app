@@ -333,7 +333,7 @@ export default function ProductForm({ availableBoxes, onSubmit, isSubmitting }: 
           {/* Assigned FreshBox ID */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1">
-              <Box size={12} className="text-slate-400" /> Assigned FreshBox Container *
+              <Box size={12} className="text-slate-400" /> Assigned SupplAI Container *
             </label>
             <select
               value={assignedBoxId}

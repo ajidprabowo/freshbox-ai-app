@@ -115,7 +115,7 @@ export default function ReportPreview({ batch, box, onPrint }: ReportPreviewProp
           <div className="space-y-2">
             <h4 className="font-bold text-slate-400 font-mono uppercase tracking-wide">2. Storage & Fleet Info</h4>
             <div className="grid grid-cols-2 gap-x-2 gap-y-1 bg-white p-4 rounded-xl border border-slate-200">
-              <span className="text-slate-400">FreshBox ID:</span>
+              <span className="text-slate-400">Box ID:</span>
               <span className="font-mono font-bold text-slate-800 text-right">{batch.assignedBoxId}</span>
 
               <span className="text-slate-400">Start Date:</span>

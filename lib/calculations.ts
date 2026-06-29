@@ -1,4 +1,5 @@
 import { BoxType, UsageMode, ProductBatch, Invoice } from './types';
+import { getPricePerDay } from './pricing';
 
 export function calculateRentalCost(params: {
   boxType: BoxType;
@@ -21,9 +22,7 @@ export function calculateRentalCost(params: {
   } = params;
 
   // Box base price
-  let basePricePerDay = 75000;
-  if (boxType === 'M') basePricePerDay = 120000;
-  if (boxType === 'L') basePricePerDay = 200000;
+  const basePricePerDay = getPricePerDay(boxType);
 
   const boxRentalCost = basePricePerDay * numberOfBoxes * durationDays;
 
