@@ -76,7 +76,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               <span>AI Recommendations</span>
             </div>
             <p className="text-xs text-slate-200 leading-relaxed">
-              Gemini Suggestion: Increase RH for Box #102 (Seafood) to 94%.
+              SupplAI Suggestion: Increase RH for Box #102 (Seafood) to 94%.
             </p>
           </div>
 

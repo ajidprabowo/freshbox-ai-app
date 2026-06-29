@@ -1205,7 +1205,7 @@ export default function Page() {
             <div>
               <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">Register Harvest Product</h1>
               <p className="text-sm text-slate-500 mt-1">
-                Register agricultural crops and query Gemini AI for temperature and moisture microclimate recommendations.
+                Register agricultural crops and query SupplAI for temperature and moisture microclimate recommendations.
               </p>
             </div>
 

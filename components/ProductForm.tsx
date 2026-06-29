@@ -541,7 +541,7 @@ export default function ProductForm({ availableBoxes, onSubmit, isSubmitting }: 
                       </div>
                     ) : (
                       <p className="text-xs text-slate-400 leading-relaxed py-4">
-                        Photo successfully compressed and staged. Click &ldquo;Analyze Product Photo&rdquo; below to inspect freshness, ripeness, and potential mechanical bruising via Gemini API.
+                        Photo successfully compressed and staged. Click &ldquo;Analyze Product Photo&rdquo; below to inspect freshness, ripeness, and potential mechanical bruising via SupplAI API.
                       </p>
                     )}
                   </div>
@@ -592,7 +592,7 @@ export default function ProductForm({ availableBoxes, onSubmit, isSubmitting }: 
           {isSubmitting ? (
             <>
               <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-              <span>Analyzing with Gemini AI...</span>
+              <span>Analyzing with SupplAI...</span>
             </>
           ) : (
             <>
