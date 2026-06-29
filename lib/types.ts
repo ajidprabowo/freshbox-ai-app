@@ -18,6 +18,7 @@ export interface FreshBox {
   pricePerDay: number;
   assignedProductId?: string; // ID or name of product currently inside
   currentProductLoad?: string;
+  currentProductBatchId?: string;
   activeRentalId?: string;
   operationalLocation?: 'Warehouse Storage' | 'Logistics Truck';
 }
@@ -32,6 +33,17 @@ export interface Rental {
   pickupLocation: string;
   destinationLocation: string;
   bookingDate: string;
+  selectedProductBatchId?: string;
+  selectedProductSummary?: {
+    productName: string;
+    productCategory: string;
+    batchId: string;
+    quantityKg: number;
+    origin?: string;
+    destination?: string;
+    qualityGrade?: string;
+    productPhoto?: string;
+  };
 }
 
 export interface ProductBatch {

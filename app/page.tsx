@@ -23,6 +23,9 @@ import {
   getLatestRentalSuggestion,
   saveLatestRentalSuggestion,
   clearLatestRentalSuggestion,
+  getPendingProductForRental,
+  clearPendingProductForRental,
+  updateProduct,
 } from '@/lib/storage';
 import { calculateRentalCost, calculateCumulativeImpact } from '@/lib/calculations';
 
@@ -109,6 +112,12 @@ export default function Page() {
   const [latestRecommendation, setLatestRecommendation] = useState<ProductBatch | null>(null);
   const [isRecommendationSubmitting, setIsRecommendationSubmitting] = useState(false);
 
+  // New product-to-rental flow states
+  const [pendingProductForRentalId, setPendingProductForRentalId] = useState<string | null>(null);
+  const [selectedProductForBooking, setSelectedProductForBooking] = useState<ProductBatch | null>(null);
+  const [bookingPath, setBookingPath] = useState<'registered' | 'manual'>('manual');
+  const [productSearch, setProductSearch] = useState('');
+
   // Calculator states
   const [calcBoxType, setCalcBoxType] = useState<BoxType>('M');
   const [calcQuantity, setCalcQuantity] = useState<number>(1);
@@ -153,6 +162,11 @@ export default function Page() {
     if (initialProducts.length > 0) {
       setSelectedReportBatchId(initialProducts[0].id);
       setLatestRecommendation(initialProducts[0]);
+    }
+
+    const pending = getPendingProductForRental();
+    if (pending) {
+      setPendingProductForRentalId(pending);
     }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
@@ -265,7 +279,6 @@ export default function Page() {
 
   // Calculate Cumulative Impact indicators
   const cumulativeImpact = calculateCumulativeImpact(products);
-
   // Merged Direct Booking & Product Load Attachment Handler
   const handleDirectBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,8 +287,119 @@ export default function Page() {
       return;
     }
 
+    let rentalProductBatchId: string | undefined = undefined;
+    let rentalProductSummary: Rental['selectedProductSummary'] = undefined;
+
+    let updatedBoxes = [...boxes];
+    let nextProducts = [...products];
+
+    if (bookingPath === 'registered' && selectedProductForBooking) {
+      rentalProductBatchId = selectedProductForBooking.id;
+      rentalProductSummary = {
+        productName: selectedProductForBooking.name,
+        productCategory: selectedProductForBooking.category,
+        batchId: selectedProductForBooking.id,
+        quantityKg: selectedProductForBooking.quantityKg,
+        origin: selectedProductForBooking.origin,
+        destination: selectedProductForBooking.destination,
+        qualityGrade: selectedProductForBooking.qualityGrade,
+        productPhoto: selectedProductForBooking.productPhoto,
+      };
+
+      // 1. Update Box status & details
+      updatedBoxes = boxes.map((box) => {
+        if (box.id === selectedBoxForBooking) {
+          return {
+            ...box,
+            status: 'Active Rental' as const,
+            assignedProductId: selectedProductForBooking.name,
+            currentProductBatchId: selectedProductForBooking.id,
+            activeRentalId: 'TEMP-ID',
+          };
+        }
+        return box;
+      });
+
+      // 2. Update Product batch assignment
+      nextProducts = products.map((prod) => {
+        if (prod.id === selectedProductForBooking.id) {
+          return {
+            ...prod,
+            assignedBoxId: selectedBoxForBooking,
+          };
+        }
+        return prod;
+      });
+    } else {
+      // Manual path - create a new temporary product batch and attach it
+      const manualBatchId = `BTCH-${Math.floor(1000 + Math.random() * 9000)}`;
+      rentalProductBatchId = manualBatchId;
+      rentalProductSummary = {
+        productName: bookingProductName || 'Fresh Load',
+        productCategory: bookingProductCategory,
+        batchId: manualBatchId,
+        quantityKg: bookingProductWeight,
+        origin: bookingPickup,
+        destination: bookingDestination,
+        qualityGrade: 'A',
+      };
+
+      const productBatchName = bookingProductName || `Fresh Load`;
+
+      updatedBoxes = boxes.map((box) => {
+        if (box.id === selectedBoxForBooking) {
+          return {
+            ...box,
+            status: 'Active Rental' as const,
+            assignedProductId: productBatchName,
+            currentProductBatchId: manualBatchId,
+            activeRentalId: 'TEMP-ID',
+          };
+        }
+        return box;
+      });
+
+      const newProductBatch: ProductBatch = {
+        id: manualBatchId,
+        name: productBatchName,
+        category: bookingProductCategory,
+        quantityKg: bookingProductWeight,
+        origin: bookingPickup,
+        destination: bookingDestination,
+        qualityGrade: 'A',
+        estimatedShelfLifeDays: 14,
+        dateStored: bookingStartDate,
+        expectedDeliveryDate: bookingEndDate,
+        assignedBoxId: selectedBoxForBooking,
+        recommendation: {
+          recommendedTemperature: `${bookingProductCategory === 'Tomatoes' ? 12 : bookingProductCategory === 'Seafood' ? 1 : 4}°C`,
+          recommendedHumidity: '90%',
+          airflowLevel: 'Medium',
+          storageDurationLimit: '14 Days',
+          spoilageRisk: 'Low',
+          handlingRecommendation: bookingNotes || 'Maintained via SupplAI smart microclimate controller.',
+          energyOptimizationTip: 'Enable eco-saving mode during warehouse static storage.',
+          reasoningSummary: 'Optimal settings for cold chain lifecycle preservation.'
+        }
+      };
+      nextProducts = [newProductBatch, ...products];
+    }
+
+    const assignedRentalId = `RNT-${Math.floor(100 + Math.random() * 900)}`;
+
+    // Correct activeRentalId inside box object
+    updatedBoxes = updatedBoxes.map((box) => {
+      if (box.id === selectedBoxForBooking) {
+        return {
+          ...box,
+          activeRentalId: assignedRentalId,
+        };
+      }
+      return box;
+    });
+
     const newRental: Rental = {
-      id: `RNT-${Math.floor(100 + Math.random() * 900)}`,
+      id: assignedRentalId,
       userName: bookingCompany,
       boxId: selectedBoxForBooking,
       startDate: bookingStartDate,
@@ -284,51 +408,11 @@ export default function Page() {
       pickupLocation: bookingPickup,
       destinationLocation: bookingDestination,
       bookingDate: new Date().toISOString().split('T')[0],
-    };
-
-    // Attach product load if supplied
-    const productBatchName = bookingProductName || `Fresh Load`;
-    
-    // Update boxes list: change rented box status and bind it
-    const updatedBoxes = boxes.map((box) => {
-      if (box.id === selectedBoxForBooking) {
-        return {
-          ...box,
-          status: 'Active Rental' as const,
-          assignedProductId: productBatchName,
-          activeRentalId: newRental.id,
-        };
-      }
-      return box;
-    });
-
-    // Also register a ProductBatch and attach it to the box so it is loaded!
-    const newProductBatch: ProductBatch = {
-      id: `BTCH-${Math.floor(1000 + Math.random() * 9000)}`,
-      name: productBatchName,
-      category: bookingProductCategory,
-      quantityKg: bookingProductWeight,
-      origin: bookingPickup,
-      destination: bookingDestination,
-      qualityGrade: 'A',
-      estimatedShelfLifeDays: 14, // default
-      dateStored: bookingStartDate,
-      expectedDeliveryDate: bookingEndDate,
-      assignedBoxId: selectedBoxForBooking,
-      recommendation: {
-        recommendedTemperature: `${bookingProductCategory === 'Tomatoes' ? 12 : bookingProductCategory === 'Seafood' ? 1 : 4}°C`,
-        recommendedHumidity: '90%',
-        airflowLevel: 'Medium',
-        storageDurationLimit: '14 Days',
-        spoilageRisk: 'Low',
-        handlingRecommendation: bookingNotes || 'Maintained via FreshBox smart microclimate controller.',
-        energyOptimizationTip: 'Enable eco-saving mode during warehouse static storage.',
-        reasoningSummary: 'Optimal settings for cold chain lifecycle preservation.'
-      }
+      selectedProductBatchId: rentalProductBatchId,
+      selectedProductSummary: rentalProductSummary,
     };
 
     const nextRentals = [newRental, ...rentals];
-    const nextProducts = [newProductBatch, ...products];
 
     // Save and sync state
     setBoxes(updatedBoxes);
@@ -337,6 +421,12 @@ export default function Page() {
     saveRentals(nextRentals);
     setProducts(nextProducts);
     saveProducts(nextProducts);
+
+    // Clear pending product state and localStorage if matched
+    if (pendingProductForRentalId && rentalProductBatchId === pendingProductForRentalId) {
+      clearPendingProductForRental();
+      setPendingProductForRentalId(null);
+    }
 
     // Confirm booking
     setBookingConfirmedRental(newRental);
@@ -742,6 +832,37 @@ export default function Page() {
               </div>
             </div>
 
+            {/* Pending Product Assignment Banner */}
+            {pendingProductForRentalId && (() => {
+              const pendingProduct = products.find(p => p.id === pendingProductForRentalId);
+              if (!pendingProduct) return null;
+              return (
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-3xl p-6 shadow-lg shadow-blue-500/10 flex justify-between items-center gap-4 relative overflow-hidden animate-scale-up">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+                  <div className="space-y-1.5 z-10">
+                    <span className="bg-slate-950/20 text-blue-100 font-mono text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-md">
+                      Pending Product Assignment
+                    </span>
+                    <h3 className="text-base font-extrabold font-sans">
+                      Product ready for rental: {pendingProduct.name} — {pendingProduct.id}
+                    </h3>
+                    <p className="text-xs text-blue-50/90 leading-relaxed">
+                      Select an available box below and click "Rent This Box" to continue booking with this product.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      clearPendingProductForRental();
+                      setPendingProductForRentalId(null);
+                    }}
+                    className="px-3.5 py-2 border border-white/20 text-blue-100 hover:text-white hover:bg-white/10 rounded-xl text-xs font-semibold transition-all z-10 cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              );
+            })()}
+
             {/* Smart Loaded Suggestion Banner */}
             {latestRentalSuggestion && (
               <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl p-6 shadow-lg shadow-emerald-500/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden animate-scale-up">
@@ -865,10 +986,43 @@ export default function Page() {
                   box={box}
                   onBookClick={(boxId) => {
                     setSelectedBoxForBooking(boxId);
-                    setBookingProductCategory(latestRentalSuggestion?.productCategory || 'Tomatoes');
-                    setBookingProductName(latestRentalSuggestion?.productName || '');
-                    setBookingProductWeight(latestRentalSuggestion?.totalWeightKg || 120);
-                    setBookingNotes('');
+                    
+                    const registeredProds = getProducts();
+                    const pendingId = getPendingProductForRental();
+                    
+                    let preSelected: ProductBatch | null = null;
+                    if (pendingId) {
+                      preSelected = registeredProds.find(p => p.id === pendingId) || null;
+                    }
+                    
+                    if (preSelected) {
+                      setSelectedProductForBooking(preSelected);
+                      setBookingPath('registered');
+                      setBookingProductName(preSelected.name);
+                      setBookingProductCategory(preSelected.category);
+                      setBookingProductWeight(preSelected.quantityKg);
+                      setBookingPickup(preSelected.origin);
+                      setBookingDestination(preSelected.destination);
+                      setBookingEndDate(preSelected.expectedDeliveryDate);
+                      setBookingNotes(`Batch ID: ${preSelected.id}, Quality Grade: ${preSelected.qualityGrade}`);
+                    } else if (registeredProds.length > 0) {
+                      setBookingPath('registered');
+                      setSelectedProductForBooking(null);
+                      setBookingProductName('');
+                      setBookingProductWeight(100);
+                      setBookingPickup('');
+                      setBookingDestination('');
+                      setBookingNotes('');
+                    } else {
+                      setBookingPath('manual');
+                      setSelectedProductForBooking(null);
+                      setBookingProductCategory(latestRentalSuggestion?.productCategory || 'Tomatoes');
+                      setBookingProductName(latestRentalSuggestion?.productName || '');
+                      setBookingProductWeight(latestRentalSuggestion?.totalWeightKg || 120);
+                      setBookingPickup(latestRentalSuggestion?.pickupLocation || '');
+                      setBookingDestination(latestRentalSuggestion?.destinationLocation || '');
+                      setBookingNotes('');
+                    }
                     setIsRentalModalOpen(true);
                   }}
                   onViewRentalClick={(boxId) => {
@@ -911,6 +1065,308 @@ export default function Page() {
                   </div>
 
                   <form onSubmit={handleDirectBookingSubmit} className="space-y-6">
+                    {/* Path Selector Tabs */}
+                    <div className="flex border-b border-slate-100 pb-1.5 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (products.length > 0) {
+                            setBookingPath('registered');
+                          } else {
+                            alert("No registered products yet. Please register a crop first in Product Register.");
+                          }
+                        }}
+                        className={`px-4 py-2 text-center text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                          bookingPath === 'registered'
+                            ? 'border-emerald-500 text-emerald-600'
+                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        Use Registered Product
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBookingPath('manual');
+                          setSelectedProductForBooking(null);
+                        }}
+                        className={`px-4 py-2 text-center text-xs font-bold border-b-2 transition-all cursor-pointer ${
+                          bookingPath === 'manual'
+                            ? 'border-emerald-500 text-emerald-600'
+                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        Manual Product Input
+                      </button>
+                    </div>
+
+                    {/* Integrated Product Load Attachment */}
+                    {bookingPath === 'registered' ? (
+                      <div className="space-y-4">
+                        {products.length > 0 ? (
+                          <>
+                            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                              <div>
+                                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                                  <Leaf size={14} className="text-emerald-500" />
+                                  <span>Select Registered Product</span>
+                                </label>
+                                <p className="text-[10px] text-slate-400 mt-0.5">
+                                  Choose a registered product batch. The rental form will automatically populate using its specifications.
+                                </p>
+                              </div>
+                              <input
+                                type="text"
+                                value={productSearch}
+                                onChange={(e) => setProductSearch(e.target.value)}
+                                placeholder="Search products..."
+                                className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs w-full sm:w-56 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                              />
+                            </div>
+
+                            <div className="max-h-56 overflow-y-auto space-y-2.5 pr-1 border border-slate-100 rounded-2xl p-2 bg-slate-50">
+                              {(() => {
+                                const filtered = products.filter((p) => {
+                                  const term = productSearch.toLowerCase();
+                                  return (
+                                    p.name.toLowerCase().includes(term) ||
+                                    p.category.toLowerCase().includes(term) ||
+                                    p.id.toLowerCase().includes(term)
+                                  );
+                                });
+
+                                if (filtered.length === 0) {
+                                  return (
+                                    <div className="text-center py-8 text-slate-400 text-xs bg-white rounded-xl border border-slate-100">
+                                      No matching product batches found.
+                                    </div>
+                                  );
+                                }
+
+                                return filtered.map((p) => {
+                                  const isSelected = selectedProductForBooking?.id === p.id;
+                                  const isAssigned = p.assignedBoxId && p.assignedBoxId !== '';
+                                  return (
+                                    <div
+                                      key={p.id}
+                                      onClick={() => {
+                                        setSelectedProductForBooking(p);
+                                        setBookingProductName(p.name);
+                                        setBookingProductCategory(p.category);
+                                        setBookingProductWeight(p.quantityKg);
+                                        setBookingPickup(p.origin);
+                                        setBookingDestination(p.destination);
+                                        setBookingEndDate(p.expectedDeliveryDate);
+                                        setBookingNotes(`Batch ID: ${p.id}, Quality Grade: ${p.qualityGrade}`);
+                                      }}
+                                      className={`p-3 bg-white border rounded-xl cursor-pointer hover:border-slate-300 transition-all flex gap-3 items-center ${
+                                        isSelected ? 'border-emerald-500 ring-2 ring-emerald-500/10 bg-emerald-50/10' : 'border-slate-200'
+                                      }`}
+                                    >
+                                      {p.productPhoto ? (
+                                        <img src={p.productPhoto} alt={p.name} className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0" />
+                                      ) : (
+                                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                                          <Leaf size={16} />
+                                        </div>
+                                      )}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <span className="font-bold text-slate-800 text-xs truncate">{p.name}</span>
+                                          <span className="font-mono text-[9px] bg-slate-100 text-slate-500 px-1 rounded font-semibold shrink-0">{p.id}</span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 font-mono truncate">
+                                          Category: {p.category} | Weight: <span className="font-bold">{p.quantityKg} Kg</span>
+                                        </p>
+                                        <div className="flex gap-2 mt-1">
+                                          <span className="text-[8px] font-bold font-mono px-1 bg-slate-100 text-slate-600 rounded">Grade {p.qualityGrade}</span>
+                                          {isAssigned ? (
+                                            <span className="text-[8px] font-bold font-mono px-1 bg-blue-50 text-blue-600 border border-blue-100 rounded">Active in {p.assignedBoxId}</span>
+                                          ) : (
+                                            <span className="text-[8px] font-bold font-mono px-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded">Not Assigned</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <input
+                                        type="radio"
+                                        checked={isSelected}
+                                        readOnly
+                                        className="accent-emerald-500 h-3.5 w-3.5 shrink-0"
+                                      />
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-10 bg-slate-50 border border-slate-200 border-dashed rounded-3xl space-y-4">
+                            <Leaf className="mx-auto text-slate-300 stroke-[1.5]" size={36} />
+                            <div className="space-y-1">
+                              <p className="text-xs font-semibold text-slate-600">No registered products yet.</p>
+                              <p className="text-[10px] text-slate-400 max-w-[280px] mx-auto leading-relaxed">
+                                Please register a product first in Product Register to use the pre-fill and tracking workflow.
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsRentalModalOpen(false);
+                                setActiveTab('products');
+                              }}
+                              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-[10px] transition-all uppercase cursor-pointer"
+                            >
+                              Go to Product Register
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                          <Leaf size={14} className="text-emerald-500" />
+                          <span>Manual Product Load Specification</span>
+                        </h4>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase font-mono">Product Category</label>
+                            <select
+                              value={bookingProductCategory}
+                              onChange={(e) => setBookingProductCategory(e.target.value)}
+                              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white"
+                            >
+                              <option value="Tomatoes">Tomatoes</option>
+                              <option value="Leafy Vegetables">Leafy Greens</option>
+                              <option value="Seafood">Seafood</option>
+                              <option value="Dairy">Dairy & Eggs</option>
+                              <option value="Meat">Meat & Poultry</option>
+                              <option value="Tropical Fruit">Tropical Fruits</option>
+                              <option value="Frozen Food">Frozen Food</option>
+                              <option value="Other">Other Crop</option>
+                            </select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase font-mono">Product Name</label>
+                            <input
+                              type="text"
+                              value={bookingProductName}
+                              onChange={(e) => setBookingProductName(e.target.value)}
+                              placeholder="e.g. Premium Tomatoes"
+                              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase font-mono">Weight (Kg)</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={bookingProductWeight}
+                              onChange={(e) => setBookingProductWeight(Math.max(1, parseInt(e.target.value) || 1))}
+                              className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-mono"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase font-mono">Microclimate Notes</label>
+                          <input
+                            type="text"
+                            value={bookingNotes}
+                            onChange={(e) => setBookingNotes(e.target.value)}
+                            placeholder="e.g. Maintain strict 11°C with active humidity ventilation."
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Selected Product summary block */}
+                    {selectedProductForBooking && (
+                      <div className="p-4 bg-emerald-50/40 border border-emerald-200/50 rounded-2xl space-y-3.5 animate-fade-in">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Selected Product Summary</p>
+                            <h4 className="font-extrabold text-slate-800 text-xs mt-0.5">
+                              {selectedProductForBooking.name} ({selectedProductForBooking.id})
+                            </h4>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedProductForBooking(null)}
+                            className="text-[10px] text-slate-400 hover:text-rose-600 font-bold underline cursor-pointer"
+                          >
+                            Clear Selection
+                          </button>
+                        </div>
+
+                        <div className="flex gap-4 items-start">
+                          {selectedProductForBooking.productPhoto && (
+                            <img
+                              src={selectedProductForBooking.productPhoto}
+                              alt="Thumbnail"
+                              className="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0 shadow-xs"
+                            />
+                          )}
+                          <div className="flex-1 space-y-2">
+                            {selectedProductForBooking.photoAnalysis && (
+                              <div className="flex flex-wrap gap-1.5 text-[9px] font-mono font-bold">
+                                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-100 rounded">
+                                  Visual Quality: {selectedProductForBooking.photoAnalysis.visualQuality}
+                                </span>
+                                <span className="px-2 py-0.5 bg-blue-50 text-blue-800 border border-blue-100 rounded">
+                                  Ripeness: {selectedProductForBooking.photoAnalysis.ripenessLevel}
+                                </span>
+                                <span className="px-2 py-0.5 bg-rose-50 text-rose-800 border border-rose-100 rounded">
+                                  Spoilage Risk: {selectedProductForBooking.photoAnalysis.estimatedSpoilageRisk}
+                                </span>
+                              </div>
+                            )}
+
+                            {selectedProductForBooking.recommendation && (
+                              <div className="bg-white p-2.5 rounded-xl border border-slate-100 text-[10px] space-y-1 text-slate-600">
+                                <div className="grid grid-cols-2 gap-2 font-mono">
+                                  <div>Temp: <span className="font-bold text-slate-800">{selectedProductForBooking.recommendation.recommendedTemperature}</span></div>
+                                  <div>Humidity: <span className="font-bold text-slate-800">{selectedProductForBooking.recommendation.recommendedHumidity}</span></div>
+                                </div>
+                                <p className="leading-tight"><span className="font-bold">Airflow:</span> {selectedProductForBooking.recommendation.airflowLevel} | <span className="font-bold">Shelf Life:</span> {selectedProductForBooking.recommendation.storageDurationLimit}</p>
+                                <p className="leading-tight text-slate-500 italic"><span className="font-bold font-sans not-italic text-slate-700">Advice:</span> {selectedProductForBooking.recommendation.handlingRecommendation}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Capacity Utilization Warning */}
+                        {(() => {
+                          const currentBox = boxes.find(b => b.id === selectedBoxForBooking);
+                          if (!currentBox) return null;
+                          const payloadLimit = currentBox.type === 'S' ? 25 : currentBox.type === 'M' ? 60 : 250;
+                          const isOverLimit = selectedProductForBooking.quantityKg > payloadLimit;
+
+                          if (isOverLimit) {
+                            return (
+                              <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-3 flex gap-2 items-start text-[11px] font-medium leading-relaxed">
+                                <AlertTriangle size={14} className="shrink-0 text-rose-600 mt-0.5" />
+                                <div>
+                                  <span className="font-bold">Capacity Overflow Alert: </span>
+                                  Selected product weight ({selectedProductForBooking.quantityKg} kg) exceeds {currentBox.type === 'S' ? 'SupplAI Small' : currentBox.type === 'M' ? 'SupplAI Medium' : 'SupplAI Large'} payload limit ({payloadLimit} kg). Choose another container or split the load.
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="bg-emerald-50 text-emerald-800 rounded-xl p-2 flex justify-between items-center text-[10px] font-semibold border border-emerald-100 font-mono">
+                              <span>Capacity: {selectedProductForBooking.quantityKg} kg / {payloadLimit} kg ({Math.round((selectedProductForBooking.quantityKg / payloadLimit) * 100)}%)</span>
+                              <span className="text-emerald-700">✓ Within Limit</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
                     {/* Customer & Route Fields */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
@@ -986,67 +1442,6 @@ export default function Page() {
                           placeholder="e.g. Jakarta Retail Hub"
                           className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-sm"
                           required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Integrated Product Load Attachment */}
-                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
-                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                        <Leaf size={14} className="text-emerald-500" />
-                        <span>Integrated Product Load Attachment</span>
-                      </h4>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase font-mono">Product Category</label>
-                          <select
-                            value={bookingProductCategory}
-                            onChange={(e) => setBookingProductCategory(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white"
-                          >
-                            <option value="Tomatoes">Tomatoes</option>
-                            <option value="Leafy Vegetables">Leafy Greens</option>
-                            <option value="Seafood">Seafood</option>
-                            <option value="Dairy">Dairy & Eggs</option>
-                            <option value="Meat">Meat & Poultry</option>
-                            <option value="Tropical Fruit">Tropical Fruits</option>
-                            <option value="Frozen Food">Frozen Food</option>
-                            <option value="Other">Other Crop</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase font-mono">Product Name</label>
-                          <input
-                            type="text"
-                            value={bookingProductName}
-                            onChange={(e) => setBookingProductName(e.target.value)}
-                            placeholder="e.g. Premium Tomatoes"
-                            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase font-mono">Weight (Kg)</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={bookingProductWeight}
-                            onChange={(e) => setBookingProductWeight(Math.max(1, parseInt(e.target.value) || 1))}
-                            className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-mono"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase font-mono">Microclimate Notes</label>
-                        <input
-                          type="text"
-                          value={bookingNotes}
-                          onChange={(e) => setBookingNotes(e.target.value)}
-                          placeholder="e.g. Maintain strict 11°C with active humidity ventilation."
-                          className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs"
                         />
                       </div>
                     </div>
@@ -1216,6 +1611,10 @@ export default function Page() {
                   availableBoxes={boxes}
                   onSubmit={handleProductSubmit}
                   isSubmitting={isRecommendationSubmitting}
+                  onRentBoxClick={(productBatchId) => {
+                    setPendingProductForRentalId(productBatchId);
+                    setActiveTab('box-rental');
+                  }}
                 />
               </div>
 

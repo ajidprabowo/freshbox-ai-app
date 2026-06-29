@@ -82,10 +82,21 @@ export default function ReportPreview({ batch, box, onPrint }: ReportPreviewProp
               REPORT ID: FB-QC-{batch.id.substring(4)}-2026
             </p>
           </div>
-          <div className="text-left md:text-right">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getConditionStyle(finalCondition)}`}>
-              Audit Status: {finalCondition}
-            </span>
+          <div className="text-left md:text-right space-y-1.5">
+            <div className="flex flex-wrap gap-2 items-center justify-start md:justify-end">
+              {batch.id.startsWith('BAT-') ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border border-emerald-200 bg-emerald-50 text-emerald-700">
+                  Registered Product Link
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border border-slate-200 bg-slate-100 text-slate-600">
+                  Manual Product Input
+                </span>
+              )}
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${getConditionStyle(finalCondition)}`}>
+                Audit Status: {finalCondition}
+              </span>
+            </div>
             <p className="text-[10px] text-slate-400 font-mono mt-1.5">Generated: 2026-06-24 16:15 UTC</p>
           </div>
         </div>

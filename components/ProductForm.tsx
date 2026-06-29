@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProductBatch, FreshBox, QualityGrade, UsageMode, ProductPhotoAnalysis } from '@/lib/types';
-import { Leaf, Box, Sparkles, MapPin, CalendarDays, BarChart4, Info } from 'lucide-react';
+import { Leaf, Box, Sparkles, MapPin, CalendarDays, BarChart4, Info, CheckCircle2 } from 'lucide-react';
 
 interface ProductFormProps {
   availableBoxes: FreshBox[];
   onSubmit: (batchData: Omit<ProductBatch, 'recommendation'>, usageMode: UsageMode) => Promise<void>;
   isSubmitting: boolean;
+  onRentBoxClick?: (productBatchId: string) => void;
 }
 
-export default function ProductForm({ availableBoxes, onSubmit, isSubmitting }: ProductFormProps) {
+export default function ProductForm({ availableBoxes, onSubmit, isSubmitting, onRentBoxClick }: ProductFormProps) {
   // Local state form fields
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Tomatoes');
@@ -37,6 +38,7 @@ export default function ProductForm({ availableBoxes, onSubmit, isSubmitting }: 
   const [photoAnalysis, setPhotoAnalysis] = useState<ProductPhotoAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [successBatchId, setSuccessBatchId] = useState<string | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -152,7 +154,7 @@ export default function ProductForm({ availableBoxes, onSubmit, isSubmitting }: 
   }, [availableBoxes, assignedBoxId]);
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name || !quantityKg || !origin || !destination || !dateStored || !expectedDeliveryDate || !estimatedShelfLifeDays || !assignedBoxId) {
@@ -177,7 +179,12 @@ export default function ProductForm({ availableBoxes, onSubmit, isSubmitting }: 
       photoUploadedAt: photoBase64 ? new Date().toISOString() : undefined,
     };
 
-    onSubmit(payload, usageMode);
+    try {
+      await onSubmit(payload, usageMode);
+      setSuccessBatchId(batchId);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const categories = [
@@ -190,6 +197,54 @@ export default function ProductForm({ availableBoxes, onSubmit, isSubmitting }: 
     'Frozen Food',
     'Other',
   ];
+
+  if (successBatchId) {
+    return (
+      <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-6 md:p-8 text-center space-y-6 animate-scale-up">
+        <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto text-white">
+          <CheckCircle2 size={24} className="stroke-[2.5]" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-bold text-emerald-900">Product registered successfully!</h3>
+          <p className="text-xs text-emerald-800 leading-relaxed max-w-sm mx-auto">
+            Product registered successfully. You can now rent a SupplAI box and select this product during booking.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              setSuccessBatchId(null);
+              setName('');
+              setQuantityKg('');
+              setOrigin('');
+              setDestination('');
+              setEstimatedShelfLifeDays('');
+              setPhotoBase64(null);
+              setPhotoAnalysis(null);
+              setBatchId(`BAT-${Math.floor(1000 + Math.random() * 9000)}`);
+            }}
+            className="px-5 py-2.5 bg-white border border-emerald-200 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+          >
+            Register Another Crop
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.setItem('pendingProductForRental', successBatchId);
+              if (onRentBoxClick) {
+                onRentBoxClick(successBatchId);
+              }
+            }}
+            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-all uppercase cursor-pointer"
+          >
+            Rent a Box for This Product
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

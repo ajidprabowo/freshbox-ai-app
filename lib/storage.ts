@@ -119,3 +119,30 @@ export function clearLatestRentalSuggestion(): void {
   localStorage.removeItem('latest_rental_suggestion');
 }
 
+export function getPendingProductForRental(): string | null {
+  if (!IS_BROWSER) return null;
+  return localStorage.getItem('pendingProductForRental');
+}
+
+export function savePendingProductForRental(productBatchId: string): void {
+  if (!IS_BROWSER) return;
+  localStorage.setItem('pendingProductForRental', productBatchId);
+}
+
+export function clearPendingProductForRental(): void {
+  if (!IS_BROWSER) return;
+  localStorage.removeItem('pendingProductForRental');
+}
+
+export function getProductById(id: string): ProductBatch | null {
+  const products = getProducts();
+  return products.find(p => p.id === id) || null;
+}
+
+export function updateProduct(product: ProductBatch): void {
+  const products = getProducts();
+  const nextProducts = products.map(p => p.id === product.id ? product : p);
+  saveProducts(nextProducts);
+}
+
+
