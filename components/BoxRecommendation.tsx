@@ -497,7 +497,7 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Analyzing with FreshBox AI...</span>
+                  <span>Analyzing with SupplAI...</span>
                 </>
               ) : (
                 <>
@@ -746,7 +746,7 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
 
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-sans font-bold text-sm tracking-tight text-white leading-none">FreshBox AI Logistics</p>
+                        <p className="font-sans font-bold text-sm tracking-tight text-white leading-none">SupplAI Logistics</p>
                         <p className="text-[8px] text-slate-400 uppercase tracking-wider mt-1">Smart Cold Chain Invoice Quote</p>
                       </div>
                       <div className="text-right">
@@ -796,7 +796,7 @@ export default function BoxRecommendation({ onUseRecommendation }: BoxRecommenda
                     </div>
 
                     <div className="pt-2 text-center border-t border-slate-800/50">
-                      <p className="text-[8px] text-slate-500">Invoice generated automatically by FreshBox AI Engine. All rights reserved.</p>
+                      <p className="text-[8px] text-slate-500">Invoice generated automatically by SupplAI Engine. All rights reserved.</p>
                     </div>
                   </div>
                 </div>

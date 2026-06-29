@@ -76,7 +76,7 @@ export default function ReportPreview({ batch, box, onPrint }: ReportPreviewProp
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-200">
           <div>
             <h3 className="font-sans font-extrabold text-slate-900 text-lg tracking-tight uppercase print:text-xl">
-              FreshBox AI • Quality Compliance Audit
+              SupplAI • Quality Compliance Audit
             </h3>
             <p className="text-xs text-slate-500 font-mono mt-1">
               REPORT ID: FB-QC-{batch.id.substring(4)}-2026
@@ -312,7 +312,7 @@ export default function ReportPreview({ batch, box, onPrint }: ReportPreviewProp
         {/* Signatures & Disclaimers */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-6 border-t border-slate-200 text-[10px] text-slate-400">
           <div className="space-y-1">
-            <p>FreshBox AI MVP IoT Cloud Core Telemetry Log</p>
+            <p>SupplAI MVP IoT Cloud Core Telemetry Log</p>
             <p>Verification Algorithm: SHA-256 Verified Cold Chain Integrity Hash</p>
           </div>
           <div className="text-left md:text-right space-y-1 font-mono">

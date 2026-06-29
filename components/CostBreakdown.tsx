@@ -98,7 +98,7 @@ export default function CostBreakdown({ invoice, onPrintInvoice }: CostBreakdown
 
           <div className="flex justify-between items-start">
             <div>
-              <p className="font-sans font-bold text-sm tracking-tight text-white leading-none">FreshBox AI Logistics</p>
+              <p className="font-sans font-bold text-sm tracking-tight text-white leading-none">SupplAI Logistics</p>
               <p className="text-[9px] text-slate-400 uppercase tracking-wider mt-1">Smart Cold Chain Invoice</p>
             </div>
             <div className="text-right">
@@ -148,7 +148,7 @@ export default function CostBreakdown({ invoice, onPrintInvoice }: CostBreakdown
           </div>
 
           <div className="pt-2 text-center">
-            <p className="text-[9px] text-slate-500">Thank you for reducing food waste with FreshBox AI!</p>
+            <p className="text-[9px] text-slate-500">Thank you for reducing food waste with SupplAI!</p>
           </div>
         </div>
       </div>

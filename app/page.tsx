@@ -625,7 +625,7 @@ export default function Page() {
                   </div>
                   <h2 className="text-xl font-bold font-sans tracking-tight">Net Sustainability Abatement</h2>
                   <p className="text-xs text-emerald-200/80 leading-relaxed">
-                    FreshBox AI units prevent biological ripening decay and minimize global thermal trailer waste.
+                    SupplAI units prevent biological ripening decay and minimize global thermal trailer waste.
                   </p>
                 </div>
 
